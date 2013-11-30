@@ -3,7 +3,7 @@ Input/
 Output/
 
 # C extensions
-*.so
+#*.so
 
 # Packages
 *.egg
