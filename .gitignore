@@ -1,9 +1,9 @@
-# *.py[cod]
+*.py[cod]
 Input/
 Output/
 
 # C extensions
-#*.so
+*.so
 
 # Packages
 *.egg
