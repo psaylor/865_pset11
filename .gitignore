@@ -1,4 +1,6 @@
 # *.py[cod]
+Input/
+Output/
 
 # C extensions
 *.so
