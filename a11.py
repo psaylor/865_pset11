@@ -84,41 +84,91 @@ def  sobel(lumi):
     return (outputNP, gradientMagnitude)
 
 def pythonCodeForBoxSchedule5(lumi):    
-        ''' lumi is assumed to be a 1-channel numpy array. 
-        Write the python nested loops corresponding to the 3x3 box schedule 5
-        and return a list representing the order of evaluation. 
-        Each time you perform a computation of blur_x or blur_y, put a triplet with the name 
-        of the function (string 'blur_x' or 'blur_y') and the output coordinates x and y. 
-        e.g. [('blur_x', 0, 0), ('blur_y', 0,0), ('blur_x', 0, 1), ...] '''
-        
-        # schedule 5:
-        # blur_y.compute_root() 
-        # blur_x.compute_at(blur_y, x)
+    ''' lumi is assumed to be a 1-channel numpy array. 
+    Write the python nested loops corresponding to the 3x3 box schedule 5
+    and return a list representing the order of evaluation. 
+    Each time you perform a computation of blur_x or blur_y, put a triplet with the name 
+    of the function (string 'blur_x' or 'blur_y') and the output coordinates x and y. 
+    e.g. [('blur_x', 0, 0), ('blur_y', 0,0), ('blur_x', 0, 1), ...] '''
+
+    # schedule 5:
+    # blur_y.compute_root() 
+    # blur_x.compute_at(blur_y, x)
+    height, width = lumi.shape[0:2]
+    # compute blur_y at root
+    evals = []
+    for y in xrange(height):
+        for x in xrange(width):
+            # first compute blur_x
+            evals.append( ('blur_x',x,y) )
+            evals.append( ('blur_x',x,y+1) )
+            evals.append( ('blur_x',x,y+2) )
+            # then compute blur_y
+            evals.append( ('blur_y',x,y) )
+    return evals
+
 
 def pythonCodeForBoxSchedule6(lumi):    
-        ''' lumi is assumed to be a 1-channel numpy array. 
-        Write the python nested loops corresponding to the 3x3 box schedule 5
-        and return a list representing the order of evaluation. 
-        Each time you perform a computation of blur_x or blur_y, put a triplet with the name 
-        of the function (string 'blur_x' or 'blur_y') and the output coordinates x and y. 
-        e.g. [('blur_x', 0, 0), ('blur_y', 0,0), ('blur_x', 0, 1), ...] '''
-        
-        # schedule 6:
-        # blur_y.tile(x, y, xo, yo, xi, yi, 2, 2)
-        # blur_x.compute_at(blur_y, yo)
+    ''' lumi is assumed to be a 1-channel numpy array. 
+    Write the python nested loops corresponding to the 3x3 box schedule 5
+    and return a list representing the order of evaluation. 
+    Each time you perform a computation of blur_x or blur_y, put a triplet with the name 
+    of the function (string 'blur_x' or 'blur_y') and the output coordinates x and y. 
+    e.g. [('blur_x', 0, 0), ('blur_y', 0,0), ('blur_x', 0, 1), ...] '''
 
+    # schedule 6:
+    # blur_y.tile(x, y, xo, yo, xi, yi, 2, 2)
+    # blur_x.compute_at(blur_y, yo)
+    height, width = lumi.shape[0:2]
+    evals = []
+
+    for yo in xrange((height+1)/2): #+1 is here to get the ceiling
+        # first compute blur_x inside yo loop
+        for yi in xrange(2+2):
+            y = yo*2+yi
+            if y>= height: y=height-1
+            for xi in xrange(width):
+                # compute blur_x
+                evals.append( ('blur_x', xi, y) )
+        for xo in xrange((width+1)/2):
+            # then compute blur_y
+            for yi in xrange(2):
+                y = yo*2+yi
+                if y>= height: y=height-1
+                for xi in xrange(2):
+                    x = xo*2+xi
+                    if x>= width: x=width-1
+                    evals.append( ('blur_y', x, y) )
+    return evals
 
 def pythonCodeForBoxSchedule7(lumi):    
-        ''' lumi is assumed to be a 1-channel numpy array. 
-        Write the python nested loops corresponding to the 3x3 box schedule 5
-        and return a list representing the order of evaluation. 
-        Each time you perform a computation of blur_x or blur_y, put a triplet with the name 
-        of the function (string 'blur_x' or 'blur_y') and the output coordinates x and y. 
-        e.g. [('blur_x', 0, 0), ('blur_y', 0,0), ('blur_x', 0, 1), ...] '''
-        
-        # schedule 7
-        # blur_y.split(x, xo, xi, 2)
-        # blur_x.compute_at(blur_y, y)
+    ''' lumi is assumed to be a 1-channel numpy array. 
+    Write the python nested loops corresponding to the 3x3 box schedule 5
+    and return a list representing the order of evaluation. 
+    Each time you perform a computation of blur_x or blur_y, put a triplet with the name 
+    of the function (string 'blur_x' or 'blur_y') and the output coordinates x and y. 
+    e.g. [('blur_x', 0, 0), ('blur_y', 0,0), ('blur_x', 0, 1), ...] '''
+
+    # schedule 7
+    # blur_y.split(x, xo, xi, 2)
+    # blur_x.compute_at(blur_y, y)
+    height, width = lumi.shape[0:2]
+    factor = 2
+    evals = []
+
+    for y in xrange(height):
+        # compute blur_x
+        for x in xrange(width):
+            evals.append( ('blur_x',x,y) )
+
+        for xo in xrange((width+(factor-1))/factor):
+            for xi in xrange(factor):
+                #compute blur_y
+                x = xo*factor + xi
+                if x>=width: x=width-1
+                evals.append( ('blur_y',x,y) )
+            
+    return evals
 
 
 ########### PART 2 ##################

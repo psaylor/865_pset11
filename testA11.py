@@ -32,10 +32,10 @@ def main():
     if True: 
         L=a11.pythonCodeForBoxSchedule5(smallLumi)
         print L
-    if False: 
+    if True: 
         L=a11.pythonCodeForBoxSchedule6(smallLumi)
         print L
-    if False: 
+    if True: 
         L=a11.pythonCodeForBoxSchedule7(smallLumi)
         print L
     if False: 
