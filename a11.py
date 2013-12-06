@@ -353,45 +353,36 @@ def harris(im, scheduleIndex):
         # use a smart schedule that makes use of parallelism and  has decent locality (tiles are often a good option)
         xo, yo, xi, yi = Var('xo'), Var('yo'), Var('xi'), Var('yi')
 
-        # blurX.compute_root()
+        finalBlur.compute_root() \
+            .tile(x, y, xo, yo, xi, yi, 128, 64) \
+            .parallel(yo)
         
-        # locMax.tile(x, y, xo, yo, xi, yi, 128, 64)
-        # locMax.parallel(yo)
-        # M.compute_at(locMax, xo)
+        ix2.compute_root() \
+            .tile(x, y, xo, yo, xi, yi, 128, 64) \
+            .parallel(yo)
+        iy2.compute_root() \
+            .tile(x, y, xo, yo, xi, yi, 128, 64) \
+            .parallel(yo)
+        ixiy.compute_root() \
+            .tile(x, y, xo, yo, xi, yi, 128, 64) \
+            .parallel(yo)
 
-        # ix2.compute_at(locMax, xo) \
-        #     .tile(x, y, xo, yo, xi, yi, 32, 32)
-        # iy2.compute_at(locMax, xo) \
-        #     .tile(x, y, xo, yo, xi, yi, 32, 32)
-        # ixiy.compute_at(locMax, xo) \
-        #     .tile(x, y, xo, yo, xi, yi, 32, 32)
+        blurIx2X.compute_at(ix2, xo)
+        blurIy2X.compute_at(iy2, xo)
+        blurIxIyX.compute_at(ixiy, xo)
+        blurX.compute_at(finalBlur, xo)
+        
+        temp_ix2.compute_at(ix2, xo)
+        temp_iy2.compute_at(iy2, xo)
+        temp_ixiy.compute_at(ixiy, xo)
 
-        # blurIx2X.compute_at(ix2, xo)
-        # blurIy2X.compute_at(iy2, xo)
-        # blurIxIyX.compute_at(ixiy, xo)
-
-        # clamped_lumi.compute_at(locMax, xo)
-        # finalBlur.compute_at(locMax, xo)
-        # temp_ix2.compute_at(locMax, xo)
-        # temp_iy2.compute_at(locMax, xo)
-        # temp_ixiy.compute_at(locMax, xo)
-
-        clamped_lumi.compute_at(locMax, yo)
-        finalBlur.compute_at(locMax, xo)
-        temp_ix2.compute_at(locMax, xo)
-        temp_iy2.compute_at(locMax, xo)
-        temp_ixiy.compute_at(locMax, xo)
+        clamped_lumi.compute_root()
         
         locMax.tile(x,y,xo,yo,xi,yi,128,64)
         locMax.parallel(yo)
         M.compute_at(locMax, xo)
-        blurX.compute_at(locMax, xo)
-        blurIx2X.compute_at(locMax, xo)
-        blurIy2X.compute_at(locMax, xo)
-        blurIxIyX.compute_at(locMax, xo)
-        gKern.compute_at(locMax, xo)
-        
-
+       
+        gKern.compute_root()
     
     print "Compiling Halide Code..."
     compstart = time.time()
@@ -424,12 +415,64 @@ def horiGaussKernel(sigma, truncate=3):
   kernel = normalizeKernel(kernel)
   return kernel
 
-def autotune():
-    # diffrent numbers for tiles
-    # different numbers for different tiles
-    # you have different stages you'd want to compute at root or compute_at
-    # two gaussian blurs are of interest, esp the second one which has a bigger sigma, so redundancy can cost you more
-    # at least try to tile to different places with different tile granularities
-    # maybe big synchronization at root
-    # stencil means anything that consumes more than one pixel at a previous stage
+
+def harris_algorithm(im):
+    ''' Return a pair (outputNP, myFunc) '''
+    input = Image(Float(32), im)
+    sigmaG = 1.0
+    factor = 4
+    k = 0.15
+    thr = 0.0
+
+    x, y, c = Var('x'), Var('y'), Var('c')
+    lumi = Func('luminance')
+    clamped_lumi = Func('clamped') 
+    temp_ix2 = Func('temp_ix2')
+    temp_iy2 = Func('temp_iy2')
+    temp_ixiy= Func('temp_ixiy')
+    det = Func('determinant')
+    trace = Func('trace')
+    M = Func('M')
+    threshold = Func('threshold')
+    locMax = Func('localMaximum')
+
+    print "compute luminance and blur"
+    lumi[x,y] = input[x,y,0]*0.3 + input[x,y,1]*0.6 + input[x,y,2]*0.1
+    clamped_lumi[x, y] = lumi[clamp(x, 0, input.width()-1), clamp(y, 0, input.height()-1)]
+    blurX, finalBlur, gKern = GaussianSingleChannelWithKernel(clamped_lumi, sigmaG)
+
+    print "compute gradient"
+    (gx, gy) = sobel_x_y(finalBlur)
+
+    print 'form tensor'
+    temp_ix2[x,y] = gx[x,y]**2
+    temp_iy2[x,y] = gy[x,y]**2
+    temp_ixiy[x,y] = gx[x,y] * gy[x,y]
+
+    print 'blur tensor'
+    (blurIx2X, ix2, throw) = GaussianSingleChannelWithKernel(temp_ix2, sigmaG*factor, gKern)
+    (blurIy2X, iy2, throw) = GaussianSingleChannelWithKernel(temp_iy2, sigmaG*factor, gKern)
+    (blurIxIyX, ixiy, throw) = GaussianSingleChannelWithKernel(temp_ixiy, sigmaG*factor, gKern)
+
+    print 'determinant of tensor'
+    det[x,y] = (ix2[x,y]*iy2[x,y]) - ixiy[x,y]**2
+    # trace of tensor
+    trace[x,y] = ix2[x,y] + iy2[x,y]
+
+    print 'Harris response'
+    M[x,y] = det[x,y] - k*trace[x,y]**2
+
+    print 'threshold'
+    threshold[x,y] = select(M[x,y] > thr, 1.0, 0.0)
+
+    print 'local maximum'
+    localMaxCondition = (M[x,y]>M[x,y+1]) & (M[x,y]>M[x+1,y+1]) & (M[x,y]>M[x,y-1]) & (M[x,y]>M[x-1,y-1])
+    locMax[x,y] = select(localMaxCondition , threshold[x,y], 0.0)
+
+    return (locMax, threshold, M, trace, det, ixiy, blurIxIyX, iy2, blurIy2X, ix2, blurIx2X, temp_ixiy, temp_iy2, temp_ix2, gx, gy, blurX, finalBlur, gKern, clamped_lumi)
+
+def autotuneHarris():
+    # Schedule 1
     pass
+    
+
