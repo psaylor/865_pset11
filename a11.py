@@ -407,7 +407,7 @@ def harris_algorithm(im):
 
 def autotuneHarris(im):
     height, width = im.shape[0:2]
-    tile_dims = [32, 64, 128, 256]
+    tile_dims = [128, 256]
     best_time = -1
     best_schedule = -1
     best_params = dict()
@@ -416,6 +416,7 @@ def autotuneHarris(im):
     for y_tile_size in tile_dims:
         for x_tile_size in tile_dims:
             # Get the Algorithm
+            continue
             print "\nTuning Schedule 1 | y_tile_size=",y_tile_size, ", x_tile_size=", x_tile_size
             (locMax, threshold, M, trace, det, ixiy, blurIxIyX, iy2, blurIy2X, ix2, blurIx2X, temp_ixiy, temp_iy2, temp_ix2, gx, gy, blurX, finalBlur, gKern, clamped_lumi, lumi, input) = harris_algorithm(im)
             
@@ -457,8 +458,12 @@ def autotuneHarris(im):
                     y_blur_tile_size = tile_dims[ytb]
                     x_blur_tile_size = tile_dims[xtb]
                     print "\nTuning Schedule 2 | y_tile_size=",y_tile_size, ", x_tile_size=", x_tile_size, ", y_blur_tile_size=", y_blur_tile_size, ", x_blur_tile_size=", x_blur_tile_size
+                    
+                    # Get the Algorithm
                     (locMax, threshold, M, trace, det, ixiy, blurIxIyX, iy2, blurIy2X, ix2, blurIx2X, temp_ixiy, temp_iy2, temp_ix2, gx, gy, blurX, finalBlur, gKern, clamped_lumi, lumi, input) = harris_algorithm(im)
                     
+                    # Set the schedule
+                    x, y, xo, yo, xi, yi = Var('x'), Var('y'), Var('xo'), Var('yo'), Var('xi'), Var('yi') 
                     clamped_lumi.compute_root()
                     gKern.compute_root()
                     finalBlur.compute_root() \
