@@ -122,3 +122,99 @@ def autotune():
        
         #gKern.compute_at(locMax, xo)
         gKern.compute_root()
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+============= RESULTS ============
+psaylor@W20-575-54:~/Desktop/6.865/865_pset11$ python testA11.py
+Running harris autotune
+Tuning Schedule 1 | y_tile_size= 32 , x_tile_size= 32
+best:  57.8826601505
+1618.94527 ms per megapixel (57882.6601505 ms for 35 megapixels)
+Tuning Schedule 1 | y_tile_size= 32 , x_tile_size= 64
+best:  49.3775069714
+1381.06094 ms per megapixel (49377.5069714 ms for 35 megapixels)
+Tuning Schedule 1 | y_tile_size= 32 , x_tile_size= 128
+best:  47.1376860142
+1318.41442 ms per megapixel (47137.6860142 ms for 35 megapixels)
+Tuning Schedule 1 | y_tile_size= 32 , x_tile_size= 256
+best:  45.0935380459
+1261.24076 ms per megapixel (45093.5380459 ms for 35 megapixels)
+Tuning Schedule 1 | y_tile_size= 64 , x_tile_size= 32
+best:  57.1209318638
+1597.64016 ms per megapixel (57120.9318638 ms for 35 megapixels)
+Tuning Schedule 1 | y_tile_size= 64 , x_tile_size= 64
+best:  48.1259651184
+1346.05603 ms per megapixel (48125.9651184 ms for 35 megapixels)
+Tuning Schedule 1 | y_tile_size= 64 , x_tile_size= 128
+best:  44.6343841553
+1248.39848 ms per megapixel (44634.3841553 ms for 35 megapixels)
+Tuning Schedule 1 | y_tile_size= 64 , x_tile_size= 256
+best:  42.6415910721
+1192.66119 ms per megapixel (42641.5910721 ms for 35 megapixels)
+Tuning Schedule 1 | y_tile_size= 128 , x_tile_size= 32
+best:  55.264384985
+1545.71359 ms per megapixel (55264.3849850 ms for 35 megapixels)
+Tuning Schedule 1 | y_tile_size= 128 , x_tile_size= 64
+best:  47.5384688377
+1329.62409 ms per megapixel (47538.4688377 ms for 35 megapixels)
+Tuning Schedule 1 | y_tile_size= 128 , x_tile_size= 128
+best:  44.1592099667
+1235.10813 ms per megapixel (44159.2099667 ms for 35 megapixels)
+Tuning Schedule 1 | y_tile_size= 128 , x_tile_size= 256
+best:  42.3012759686
+1183.14277 ms per megapixel (42301.2759686 ms for 35 megapixels)
+Tuning Schedule 1 | y_tile_size= 256 , x_tile_size= 32
+best:  54.6194560528
+1527.67530 ms per megapixel (54619.4560528 ms for 35 megapixels)
+Tuning Schedule 1 | y_tile_size= 256 , x_tile_size= 64
+best:  46.9629840851
+1313.52810 ms per megapixel (46962.9840851 ms for 35 megapixels)
+Tuning Schedule 1 | y_tile_size= 256 , x_tile_size= 128
+best:  43.6683790684
+1221.37987 ms per megapixel (43668.3790684 ms for 35 megapixels)
+Tuning Schedule 1 | y_tile_size= 256 , x_tile_size= 256
+best:  41.8851971626
+1171.50528 ms per megapixel (41885.1971626 ms for 35 megapixels)
+Best Schedule:  1
+Best Time:  41.8851971626
+Best Parameters:  {'x_tile_size': 256, 'y_tile_size': 256}
+
+
+
+
+
+
+
+
+
+
+Tuning Schedule 2 | y_tile_size= 32 , x_tile_size= 256 , y_blur_tile_size= 32 , x_blur_tile_size= 256
+    time:  41.1901919842
+1152.06637 ms per megapixel (41190.1919842 ms for 35 megapixels)
+NEW BEST!
+
+Tuning Schedule 2 | y_tile_size= 64 , x_tile_size= 32 , y_blur_tile_size= 32 , x_blur_tile_size= 32
+    time:  51.6271550655
+1443.98233 ms per megapixel (51627.1550655 ms for 35 megapixels)
+
+Tuning Schedule 2 | y_tile_size= 64 , x_tile_size= 32 , y_blur_tile_size= 64 , x_blur_tile_size= 32
+    time:  51.6070201397
+1443.41917 ms per megapixel (51607.0201397 ms for 35 megapixels)
+
+Tuning Schedule 2 | y_tile_size= 64 , x_tile_size= 64 , y_blur_tile_size= 32 , x_blur_tile_size= 32
+    time:  51.5625138283
+1442.17435 ms per megapixel (51562.5138283 ms for 35 megapixels)
+
+Tuning Schedule 2 | y_tile_size= 64 , x_tile_size= 64 , y_blur_tile_size= 32 , x_blur_tile_size= 64
+    time:  45.2529649734
+1265.69984 ms per megapixel (45252.9649734 ms for 35 megapixels)
+
+
