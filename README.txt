@@ -11,7 +11,7 @@ Q3:Anything extra you may have implemented:
 {A3: your answer}
 
 Q4:Collaboration acknowledgement (but again, you must write your own code):
-{A4: your answer}
+{A4: Marcel Polanco }
 
 Q5:What was most unclear/difficult?:
 {A5: your answer}
@@ -39,3 +39,7 @@ Q12: Describe your auto tuner in one paragraph
 
 Q13: What is the best schedule you found for Harris. 
 {A13: your answer}
+
+compute-root 
+Harrris took:  1052.92845607  seconds
+29449.81342 ms per megapixel (1052928.4560680 ms for 35 megapixels)

@@ -1,11 +1,17 @@
 import imageIO
 import numpy 
 import a11
+import time
+from halide import *
 
 def main():
-    im=imageIO.imread('rgb.png')
-    lumi=im[:,:,1] #I'm lazy, I'll just use green
-    smallLumi=numpy.transpose(lumi[0:5, 0:5])
+    # im=imageIO.imread('rgb.png')
+    # lumi=im[:,:,1] #I'm lazy, I'll just use green
+    # smallLumi=numpy.transpose(lumi[0:5, 0:5])
+
+    # im_small = imageIO.imread('rgb-small.png')
+    # lumi_small = im_small[:,:,1]
+    # smallLumi_small = numpy.transpose(lumi_small[0:5, 0:5])
 
     # Replace if False: by if True: once you have implement the required functions. 
     # Exercises:
@@ -29,32 +35,48 @@ def main():
         imageIO.imwrite(outputNP, 'sobelMag.png')
         print ' Dimensionality of Halide Func:', myFunc.dimensions()
 
-    if True: 
+    if False: 
         L=a11.pythonCodeForBoxSchedule5(smallLumi)
         print L
-    if True: 
+    if False: 
         L=a11.pythonCodeForBoxSchedule6(smallLumi)
         print L
-    if True: 
+    if False: 
         L=a11.pythonCodeForBoxSchedule7(smallLumi)
         print L
+
     if False: 
-        outputNP, myFunc=a11.localMax(lumi)
+        outputNP, myFunc=a11.localMax(lumi_small)
         print ' Dimensionality of Halide Func:', myFunc.dimensions()
         imageIO.imwrite(outputNP, 'maxi.png')
+
     if False: 
-        input=Image(Float(32), lumi)
-        x, y, c = Var('x'), Var('y')
+        input=Image(Float(32), lumi_small)
+        xp, yp = Var('xp'), Var('yp')
         clamped = Func('clamped') 
-        clamped[x, y] = input[clamp(x, 0, input.width()-1),
-                             clamp(y, 0, input.height()-1)]
+        clamped[xp, yp] = input[clamp(xp, 0, input.width()-1),
+                             clamp(yp, 0, input.height()-1)]
+        sigma = 1.0
         blurX, finalBlur= a11.GaussianSingleChannel(clamped , sigma, trunc=3)
-    if False: 
+        output = finalBlur.realize(input.width(), input.height())
+        outputNP = numpy.array(Image(output))
+        print outputNP[outputNP < 0]
+        imageIO.imwriteGrey(outputNP, "gaussian_blur.png")
+
+    if True: 
+        print 'Running harris corner detector'
+        readstart = time.time()
+        
+        filen = "hk"
+        print "Reading in file ", filen + ".png"
         im=numpy.load('Input/hk.npy')
-        scheduleIndex=0
+        # im = imageIO.imread( filen + ".png")
+        print "Reading in file took ... ", time.time() - readstart
+        print "Running harris..."
+        scheduleIndex= 1
         outputNP, myFunc=a11.harris(im, scheduleIndex)
         print ' Dimensionality of Halide Func:', myFunc.dimensions()
-        imageIO.imwrite(outputNP, 'harris.png')
+        imageIO.imwrite(outputNP, filen+'-harris.png')
  
 #the usual Python module business
 if __name__ == '__main__':

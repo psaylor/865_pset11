@@ -16,6 +16,10 @@ from halide import *
 
 import imageIO
 
+# hl_debug_codegen set to 1/2/3 for different levels of  verbosity
+# export HL_DEBUG_CODEGEN = 1 in shell
+# HL_TRACE =1 or 2 makes the compiled code (realize) will log information about what it's doing
+
 def main():
     
     # As usual, let's load an input
@@ -51,7 +55,7 @@ def main():
     mySum[c]=0.0
 
     # Finally, we define what the reduction should do for each reduction value. 
-    # In this case, we eant to add each reduction value to the output
+    # In this case, we want to add each reduction value to the output
     # This is called the update function, and it's going to be called for each 
     # location in the RDom. 
     # You never write an explicit loop over the RDom, Halide does it for you. 
