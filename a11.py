@@ -282,56 +282,7 @@ def harris(im, scheduleIndex):
     Note that the local maximum criterion is simplified compared to our original Harris
     You might want to reuse or copy-paste some of the code you wrote above        
     Return a pair (outputNP, myFunc) where outputNP is a numpy array and myFunc is a Halide Func'''
-    input = Image(Float(32), im)
-    sigmaG = 1.0
-    factor = 4
-    k = 0.15
-    thr = 0.0
-
-    x, y, c = Var('x'), Var('y'), Var('c')
-    lumi = Func('luminance')
-    clamped_lumi = Func('clamped') 
-    temp_ix2 = Func('temp_ix2')
-    temp_iy2 = Func('temp_iy2')
-    temp_ixiy= Func('temp_ixiy')
-    det = Func('determinant')
-    trace = Func('trace')
-    M = Func('M')
-    threshold = Func('threshold')
-    locMax = Func('localMaximum')
-
-    print "compute luminance and blur"
-    lumi[x,y] = input[x,y,0]*0.3 + input[x,y,1]*0.6 + input[x,y,2]*0.1
-    clamped_lumi[x, y] = lumi[clamp(x, 0, input.width()-1), clamp(y, 0, input.height()-1)]
-    blurX, finalBlur, gKern = GaussianSingleChannelWithKernel(clamped_lumi, sigmaG)
-
-    print "compute gradient"
-    (gx, gy) = sobel_x_y(finalBlur)
-
-    print 'form tensor'
-    temp_ix2[x,y] = gx[x,y]**2
-    temp_iy2[x,y] = gy[x,y]**2
-    temp_ixiy[x,y] = gx[x,y] * gy[x,y]
-
-    print 'blur tensor'
-    (blurIx2X, ix2, throw) = GaussianSingleChannelWithKernel(temp_ix2, sigmaG*factor, gKern)
-    (blurIy2X, iy2, throw) = GaussianSingleChannelWithKernel(temp_iy2, sigmaG*factor, gKern)
-    (blurIxIyX, ixiy, throw) = GaussianSingleChannelWithKernel(temp_ixiy, sigmaG*factor, gKern)
-
-    print 'determinant of tensor'
-    det[x,y] = (ix2[x,y]*iy2[x,y]) - ixiy[x,y]**2
-    # trace of tensor
-    trace[x,y] = ix2[x,y] + iy2[x,y]
-
-    print 'Harris response'
-    M[x,y] = det[x,y] - k*trace[x,y]**2
-
-    print 'threshold'
-    threshold[x,y] = select(M[x,y] > thr, 1.0, 0.0)
-
-    print 'local maximum'
-    localMaxCondition = (M[x,y]>M[x,y+1]) & (M[x,y]>M[x+1,y+1]) & (M[x,y]>M[x,y-1]) & (M[x,y]>M[x-1,y-1])
-    locMax[x,y] = select(localMaxCondition , threshold[x,y], 0.0)
+    (locMax, threshold, M, trace, det, ixiy, blurIxIyX, iy2, blurIy2X, ix2, blurIx2X, temp_ixiy, temp_iy2, temp_ix2, gx, gy, blurX, finalBlur, gKern, clamped_lumi) = harris_algorithm(im)
 
     if (scheduleIndex == 0):
         print "Compute_root scheduling..."
@@ -351,7 +302,7 @@ def harris(im, scheduleIndex):
     else:
         print "Fast Scheduling..."
         # use a smart schedule that makes use of parallelism and  has decent locality (tiles are often a good option)
-        xo, yo, xi, yi = Var('xo'), Var('yo'), Var('xi'), Var('yi')
+        x, y, xo, yo, xi, yi = Var('x'), Vary('y', Var('xo'), Var('yo'), Var('xi'), Var('yi')
 
         finalBlur.compute_root() \
             .tile(x, y, xo, yo, xi, yi, 128, 64) \
@@ -471,8 +422,55 @@ def harris_algorithm(im):
 
     return (locMax, threshold, M, trace, det, ixiy, blurIxIyX, iy2, blurIy2X, ix2, blurIx2X, temp_ixiy, temp_iy2, temp_ix2, gx, gy, blurX, finalBlur, gKern, clamped_lumi)
 
-def autotuneHarris():
-    # Schedule 1
-    pass
+def autotuneHarris(im):
+    height, width = im.shape[0:2]
+    tile_dims = [32, 64, 128, 256]
+    best_time = -1
+    best_schedule = -1
+    best_params = dict()
+        
+    # Schedule 1: Tile locMax and schedule everything at xo
+    for y_tile_size in tile_dims:
+        for x_tile_size in tile_dims:
+            # Get the Algorithm
+            (locMax, threshold, M, trace, det, ixiy, blurIxIyX, iy2, blurIy2X, ix2, blurIx2X, temp_ixiy, temp_iy2, temp_ix2, gx, gy, blurX, finalBlur, gKern, clamped_lumi) = harris_algorithm(im)
+            
+            # Set the schedule    
+            locMax.tile(x,y,xo,yo,xi,yi, y_tile_size, x_tile_size)
+            locMax.parallel(yo)
+            clamped_lumi.compute_at(locMax, yo)
+            gKern.compute_at(locMax, xo)
+            finalBlur.compute_at(locMax, xo)
+            temp_ix2.compute_at(locMax, xo)
+            temp_iy2.compute_at(locMax, xo)
+            temp_ixiy.compute_at(locMax, xo)
+            
+            blurX.compute_at(locMax, xo)
+            blurIx2X.compute_at(locMax, xo)
+            blurIy2X.compute_at(locMax, xo)
+            blurIxIyX.compute_at(locMax, xo)
+            
+            M.compute_at(locMax, xo)
+            
+            # Time it
+            runTime = runAndMeasure(locMax, width, height)
+            
+            # Check if best
+            if runTime < best_time:
+                best_time = runTime
+                best_schedule = 1
+            
+def runAndMeasure(myFunc, w, h):
+    myFunc.compile_jit()    
+    
+    t=time.time()
+    output = myFunc.realize(w,h)
+    dt = time.time() - t
+    
+    hIm=Image(output)
+    mpix=hIm.width()*hIm.height()/1e6
+    print 'best: ', dt
+    print  '%.5f ms per megapixel (%.7f ms for %d megapixels)' % (dt/mpix*1e3, dt*1e3, mpix)
+    return dt            
     
 
