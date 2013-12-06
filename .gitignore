@@ -4,7 +4,8 @@ Output/
 
 # C extensions
 *.so
-
+*.pyc
+*~
 # Packages
 *.egg
 *.egg-info

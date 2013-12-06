@@ -140,7 +140,8 @@ def boxBlur(im, indexOfSchedule, tileX=128, tileY=128):
     return output, dt
 
 def main():    
-    #im=imageIO.imread('hk.png')
+    # print "Reading hk.png"
+    # im=imageIO.imread('hk.png')
     path='Input/hk.npy'
     print 'loading file ', path
     im=numpy.load(path)

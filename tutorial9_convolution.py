@@ -33,7 +33,7 @@ def boxBlur(im, indexOfBlur=0):
         # Our reduction domain will cover the footprint of the kernel
         # It corresponds to the bounds of the inner loop you would write
         # in Python for the output of each pixel 
-        r = RDom(0,    kernel_width, 0,    kernel_width, 'r')                            
+        r = RDom(0,    kernel_width, 0,    kernel_width, 'r')
 
         # next we initialize the convolution sum at each pixel to zero
         blur[x,y,c] = 0.0
@@ -154,7 +154,7 @@ def boxBlur(im, indexOfBlur=0):
                         superBlur[x,y,c]=tmp[0,0,0]
 
 
-       #equivalent Python code with 1-iteration loops removed
+       # equivalent Python code with 1-iteration loops removed
        # We have succesfully achieved the order we wanted
 
         if False: 
@@ -170,9 +170,6 @@ def boxBlur(im, indexOfBlur=0):
                                                   y+ry-kernel_width/2,
                                                   c]  / kernel_width**2
                         superBlur[x,y,c]=tmp
-
-
-
 
     if indexOfBlur==2:
         print 'Box blur with the *sum* sugar'

@@ -57,11 +57,13 @@ def harris(im, sigmaG=1, factor=4, k = 0.15, thr=0.0, debug=False):
 
 def main():
     im=np.load('Input/hk.npy')
+    mpix= (im.shape[0] * im.shape[1])/1e6
     t=time.time()
     out=harris(im)
     dt=time.time()-t
-
+    
     print 'took ', dt, 'seconds'
+    print  '%.5f ms per megapixel (%.7f ms for %d megapixels)' % (dt/mpix*1e3, dt*1e3, mpix)
 
     norm=np.max(out)
     imageIO.imwrite(out/norm)

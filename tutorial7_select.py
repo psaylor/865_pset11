@@ -21,10 +21,11 @@ def main():
     # We will threshold based on the green channel. 
     # select(predicate, value1, value2) returns value1 if predicate 
     # is true, and value2 otherwise
+    pred = 1
     thresholding[x, y, c] = select(input[x,y,1]<0.5, 0.0, 1.0)
 
 
-    output = sel.realize(input.width(), input.height(), input.channels());
+    output = thresholding.realize(input.width(), input.height(), input.channels());
 
     outputNP=numpy.array(Image(output))
     imageIO.imwrite(outputNP, 'threshold.png')

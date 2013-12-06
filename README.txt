@@ -11,7 +11,7 @@ Q3:Anything extra you may have implemented:
 {A3: your answer}
 
 Q4:Collaboration acknowledgement (but again, you must write your own code):
-{A4: your answer}
+{A4: Marcel Polanco }
 
 Q5:What was most unclear/difficult?:
 {A5: your answer}
@@ -44,3 +44,31 @@ Q12: Describe your auto tuner in one paragraph
 
 Q13: What is the best schedule you found for Harris. 
 {A13: your answer}
+
+
+compute-root 
+Harrris took:  1052.92845607  seconds
+29449.81342 ms per megapixel (1052928.4560680 ms for 35 megapixels)
+
+Athena results for tutorial 10:
+  default schedule
+           took  4.85651779175 seconds
+root first stage
+           took  3.49677319527 seconds
+tile  256 x 256  + interleave
+           took  1.36110138893 seconds
+tile  256 x 256 + parallel
+           took  0.766900634766 seconds
+tile  256 x 256  + parallel+vector without interleaving
+           took  0.883076810837 seconds
+tile  64 x 128 + parallel
+           took  0.725087404251 seconds
+tile  128 x 128 + parallel
+           took  0.715808820724 seconds
+tile  256 x 128 + parallel
+           took  0.711972618103 seconds
+tile  512 x 128 + parallel
+           took  0.738884019852 seconds
+tile  1024 x 128 + parallel
+           took  0.795348167419 second
+
