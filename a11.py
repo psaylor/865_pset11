@@ -450,8 +450,8 @@ def autotuneHarris(im):
     dim_range = xrange(len(tile_dims))
     for yt in dim_range:
         for xt in dim_range:
-            for ytb in xrange(yt+1):
-                for xtb in xrange(xt+1):
+            for ytb in dim_range:
+                for xtb in dim_range:
                     y_tile_size = tile_dims[yt]
                     x_tile_size = tile_dims[xt]
                     y_blur_tile_size = tile_dims[ytb]
@@ -497,6 +497,18 @@ def autotuneHarris(im):
                         best_schedule = 2
                         best_params = { "y_tile_size": y_tile_size, "x_tile_size": x_tile_size, "y_blur_tile_size": y_blur_tile_size, "x_blur_tile_size": x_blur_tile_size }
         
+    # Schedule 3: Compute Blurs at root in tiles
+    dim_range = xrange(len(tile_dims))
+    for yt in dim_range:
+        for xt in dim_range:
+            for ytb in dim_range:
+                for xtb in dim_range:
+                    y_tile_size = tile_dims[yt]
+                    x_tile_size = tile_dims[xt]
+                    y_blur_tile_size = tile_dims[ytb]
+                    x_blur_tile_size = tile_dims[xtb]
+                    print "\nTuning Schedule 2 | y_tile_size=",y_tile_size, ", x_tile_size=", x_tile_size, ", y_blur_tile_size=", y_blur_tile_size, ", x_blur_tile_size=", x_blur_tile_size
+                    (locMax, threshold, M, trace, det, ixiy, blurIxIyX, iy2, blurIy2X, ix2, blurIx2X, temp_ixiy, temp_iy2, temp_ix2, gx, gy, blurX, finalBlur, gKern, clamped_lumi, lumi, input) = harris_algorithm(im)
             
                    
     return best_schedule, best_params, best_time
