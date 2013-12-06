@@ -5,52 +5,52 @@ import time
 from halide import *
 
 def main():
-    # im=imageIO.imread('rgb.png')
-    # lumi=im[:,:,1] #I'm lazy, I'll just use green
-    # smallLumi=numpy.transpose(lumi[0:5, 0:5])
+    im=imageIO.imread('rgb.png')
+    lumi=im[:,:,1] #I'm lazy, I'll just use green
+    smallLumi=numpy.transpose(lumi[0:5, 0:5])
 
-    # im_small = imageIO.imread('rgb-small.png')
-    # lumi_small = im_small[:,:,1]
-    # smallLumi_small = numpy.transpose(lumi_small[0:5, 0:5])
+    im_small = imageIO.imread('rgb-small.png')
+    lumi_small = im_small[:,:,1]
+    smallLumi_small = numpy.transpose(lumi_small[0:5, 0:5])
 
     # Replace if False: by if True: once you have implement the required functions. 
     # Exercises:
-    if False:
+    if True:
         print 'Running smoothGradientNormalized'
         outputNP, myFunc=a11.smoothGradientNormalized()
         print ' Dimensionality of Halide Func:', myFunc.dimensions()
         imageIO.imwrite(outputNP, 'normalizedGradient.png')
-    if False:
+    if True:
         print 'Running wavyRGB'
         outputNP, myFunc=a11.wavyRGB()
         print ' Dimensionality of Halide Func:', myFunc.dimensions()
         imageIO.imwrite(outputNP, 'rgbWave.png')
-    if False:
+    if True:
         print 'Running lumninance'
         outputNP, myFunc=a11.luminance(im)
         print ' Dimensionality of Halide Func:', myFunc.dimensions()
         imageIO.imwrite(outputNP, 'lumiRGB.png')
-    if False: 
+    if True: 
         outputNP, myFunc=a11.sobel(lumi)
         imageIO.imwrite(outputNP, 'sobelMag.png')
         print ' Dimensionality of Halide Func:', myFunc.dimensions()
 
-    if False: 
+    if True: 
         L=a11.pythonCodeForBoxSchedule5(smallLumi)
         print L
-    if False: 
+    if True: 
         L=a11.pythonCodeForBoxSchedule6(smallLumi)
         print L
-    if False: 
+    if True: 
         L=a11.pythonCodeForBoxSchedule7(smallLumi)
         print L
 
-    if False: 
+    if True: 
         outputNP, myFunc=a11.localMax(lumi_small)
         print ' Dimensionality of Halide Func:', myFunc.dimensions()
         imageIO.imwrite(outputNP, 'maxi.png')
 
-    if False: 
+    if True: 
         input=Image(Float(32), lumi_small)
         xp, yp = Var('xp'), Var('yp')
         clamped = Func('clamped') 
@@ -63,7 +63,7 @@ def main():
         print outputNP[outputNP < 0]
         imageIO.imwriteGrey(outputNP, "gaussian_blur.png")
 
-    if False: 
+    if True: 
         print 'Running harris corner detector'
         readstart = time.time()
         
@@ -72,13 +72,13 @@ def main():
         im=numpy.load('Input/hk.npy')
         # im = imageIO.imread( filen + ".png")
         print "Reading in file took ... ", time.time() - readstart
-        print "Running harris..."
+        print "Running harris..." 
         scheduleIndex= 1
         outputNP, myFunc=a11.harris(im, scheduleIndex)
         print ' Dimensionality of Halide Func:', myFunc.dimensions()
         imageIO.imwrite(outputNP, filen+'-harris.png')
         
-    if True:
+    if False:
         print "Running harris autotune"
         im=numpy.load('Input/hk.npy')
         #im=imageIO.imread('hk-small.png')

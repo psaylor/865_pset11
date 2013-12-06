@@ -182,6 +182,8 @@ def pythonCodeForBoxSchedule7(lumi):
         # compute blur_x
         for x in xrange(width):
             evals.append( ('blur_x',x,y) )
+            evals.append( ('blur_x', x, y+1) )
+            evals.append( ('blur_x', x, y+2) )
 
         for xo in xrange((width+(factor-1))/factor):
             for xi in xrange(factor):
@@ -304,36 +306,21 @@ def harris(im, scheduleIndex):
         # use a smart schedule that makes use of parallelism and  has decent locality (tiles are often a good option)
         x, y, xo, yo, xi, yi = Var('x'), Var('y'), Var('xo'), Var('yo'), Var('xi'), Var('yi')
 
-        finalBlur.compute_root() \
-            .tile(x, y, xo, yo, xi, yi, 128, 64) \
-            .parallel(yo)
-        
-        ix2.compute_root() \
-            .tile(x, y, xo, yo, xi, yi, 128, 64) \
-            .parallel(yo)
-        iy2.compute_root() \
-            .tile(x, y, xo, yo, xi, yi, 128, 64) \
-            .parallel(yo)
-        ixiy.compute_root() \
-            .tile(x, y, xo, yo, xi, yi, 128, 64) \
-            .parallel(yo)
-
-        blurIx2X.compute_at(ix2, xo)
-        blurIy2X.compute_at(iy2, xo)
-        blurIxIyX.compute_at(ixiy, xo)
-        blurX.compute_at(finalBlur, xo)
-        
-        temp_ix2.compute_at(ix2, xo)
-        temp_iy2.compute_at(iy2, xo)
-        temp_ixiy.compute_at(ixiy, xo)
-
-        clamped_lumi.compute_root()
-        
-        locMax.tile(x,y,xo,yo,xi,yi,128,64)
+        locMax.tile(x,y,xo,yo,xi,yi, 128, 256)
         locMax.parallel(yo)
+        clamped_lumi.compute_at(locMax, yo)
+        gKern.compute_at(locMax, xo)
+        finalBlur.compute_at(locMax, xo)
+        temp_ix2.compute_at(locMax, xo)
+        temp_iy2.compute_at(locMax, xo)
+        temp_ixiy.compute_at(locMax, xo)
+            
+        blurX.compute_at(locMax, xo)
+        blurIx2X.compute_at(locMax, xo)
+        blurIy2X.compute_at(locMax, xo)
+        blurIxIyX.compute_at(locMax, xo)
+            
         M.compute_at(locMax, xo)
-       
-        gKern.compute_root()
     
     print "Compiling Halide Code..."
     compstart = time.time()
@@ -407,7 +394,7 @@ def harris_algorithm(im):
 
 def autotuneHarris(im):
     height, width = im.shape[0:2]
-    tile_dims = [64, 128, 256, 512]
+    tile_dims = [64, 128, 256]
     best_time = -1
     best_schedule = -1
     best_params = dict()
@@ -450,7 +437,6 @@ def autotuneHarris(im):
     dim_range = xrange(len(tile_dims))
     print "Schedule 2 has ", len(dim_range)**4, " configurations."
     for yt in dim_range:
-        continue
         for xt in dim_range:
             for ytb in dim_range:
                 for xtb in dim_range:
@@ -507,7 +493,6 @@ def autotuneHarris(im):
     dim_range = xrange(len(tile_dims))
     print "Schedule 3 has less than ", len(dim_range)**4, " configurations."
     for yt in dim_range:
-        continue
         for xt in dim_range:
             for ytb in xrange(yt+1):
                 for xtb in xrange(xt+1):

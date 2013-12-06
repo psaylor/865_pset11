@@ -32,7 +32,8 @@ def runAndMeasure(myFunc, w, h, nTimes=5):
 
 def main():
     #load the input, convert to single channel and turn into Halide Image
-    inputP=imageIO.imread('hk.png')[:,:,1] #we'll just use the green channel
+    # inputP=imageIO.imread('hk.png')[:,:,1] #we'll just use the green channel
+    inputP=numpy.load('Input/hk.npy')[:,:,1]
     input=Image(Float(32), inputP)
     numpy.transpose(inputP) #flip x and y to follow Halide indexing and
     #make the code look more similar between Python and Halide

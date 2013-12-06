@@ -187,6 +187,9 @@ Best Schedule:  1
 Best Time:  41.8851971626
 Best Parameters:  {'x_tile_size': 256, 'y_tile_size': 256}
 
+Tuning Schedule 1 | y_tile_size= 256 , x_tile_size= 512
+    time:  40.8858809471
+1143.55497 ms per megapixel (40885.8809471 ms for 35 megapixels)
 
 
 
