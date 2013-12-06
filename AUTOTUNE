@@ -1,0 +1,124 @@
+def autotune():
+    # diffrent numbers for tiles
+    # different numbers for different tiles
+    # you have different stages you'd want to compute at root or compute_at
+    # two gaussian blurs are of interest, esp the second one which has a bigger sigma, so redundancy can cost you more
+    # at least try to tile to different places with different tile granularities
+    # maybe big synchronization at root
+    # stencil means anything that consumes more than one pixel at a previous stage
+    pass
+    
+    # SCHEDULE 1:
+    clamped_lumi.compute_at(locMax, yo)
+        finalBlur.compute_at(locMax, xo)
+        temp_ix2.compute_at(locMax, xo)
+        temp_iy2.compute_at(locMax, xo)
+        temp_ixiy.compute_at(locMax, xo)
+        
+        locMax.tile(x,y,xo,yo,xi,yi,128,64)
+        locMax.parallel(yo)
+        M.compute_at(locMax, xo)
+        blurX.compute_at(locMax, xo)
+        blurIx2X.compute_at(locMax, xo)
+        blurIy2X.compute_at(locMax, xo)
+        blurIxIyX.compute_at(locMax, xo)
+        gKern.compute_at(locMax, xo)
+        
+    #SCHEDULE 2:
+          xo, yo, xi, yi = Var('xo'), Var('yo'), Var('xi'), Var('yi')
+
+        # blurX.compute_root()
+        
+        # locMax.tile(x, y, xo, yo, xi, yi, 128, 64)
+        # locMax.parallel(yo)
+        # M.compute_at(locMax, xo)
+
+        finalBlur.compute_root() \
+            .tile(x, y, xo, yo, xi, yi, 128, 64) \
+            .parallel(yo)
+        
+        ix2.compute_root() \
+            .tile(x, y, xo, yo, xi, yi, 128, 64) \
+            .parallel(yo)
+        iy2.compute_root() \
+            .tile(x, y, xo, yo, xi, yi, 128, 64) \
+            .parallel(yo)
+        ixiy.compute_root() \
+            .tile(x, y, xo, yo, xi, yi, 128, 64) \
+            .parallel(yo)
+
+        blurIx2X.compute_at(ix2, xo)
+        blurIy2X.compute_at(iy2, xo)
+        blurIxIyX.compute_at(ixiy, xo)
+        blurX.compute_at(finalBlur, xo)
+        
+        temp_ix2.compute_at(ix2, xo)
+        temp_iy2.compute_at(iy2, xo)
+        temp_ixiy.compute_at(ixiy, xo)
+
+        # clamped_lumi.compute_at(locMax, xo)
+        # finalBlur.compute_at(locMax, xo)
+        # temp_ix2.compute_at(locMax, xo)
+        # temp_iy2.compute_at(locMax, xo)
+        # temp_ixiy.compute_at(locMax, xo)
+
+        clamped_lumi.compute_root()
+        # finalBlur.compute_at(locMax, xo)
+        
+        locMax.tile(x,y,xo,yo,xi,yi,128,64)
+        locMax.parallel(yo)
+        M.compute_at(locMax, xo)
+        
+       
+        #gKern.compute_at(locMax, xo)
+        gKern.compute_root()
+        
+    #SCHEDULE 3:
+            xo, yo, xi, yi = Var('xo'), Var('yo'), Var('xi'), Var('yi')
+
+        # blurX.compute_root()
+        
+        # locMax.tile(x, y, xo, yo, xi, yi, 128, 64)
+        # locMax.parallel(yo)
+        # M.compute_at(locMax, xo)
+
+        finalBlur.compute_root() \
+            .tile(x, y, xo, yo, xi, yi, 128, 64) \
+            .parallel(yo)
+        
+        ix2.compute_at(locMax, xo) \
+            .tile(x, y, xo, yo, xi, yi, 32, 32) \
+            .parallel(yo)
+        iy2.compute_at(locMax, xo) \
+            .tile(x, y, xo, yo, xi, yi, 32, 32) \
+            .parallel(yo)
+            
+        ixiy.compute_at(locMax, xo) \
+            .tile(x, y, xo, yo, xi, yi, 128, 64) \
+            .parallel(yo)
+
+        blurIx2X.compute_at(ix2, xo)
+        blurIy2X.compute_at(iy2, xo)
+        blurIxIyX.compute_at(ixiy, xo)
+        blurX.compute_at(finalBlur, xo)
+        
+        temp_ix2.compute_at(ix2, xo)
+        temp_iy2.compute_at(iy2, xo)
+        temp_ixiy.compute_at(ixiy, xo)
+
+        # clamped_lumi.compute_at(locMax, xo)
+        # finalBlur.compute_at(locMax, xo)
+        # temp_ix2.compute_at(locMax, xo)
+        # temp_iy2.compute_at(locMax, xo)
+        # temp_ixiy.compute_at(locMax, xo)
+
+        clamped_lumi.compute_root()
+        # finalBlur.compute_at(locMax, xo)
+        
+        locMax.tile(x,y,xo,yo,xi,yi,128,64)
+        locMax.parallel(yo)
+        M.compute_at(locMax, xo)
+        
+       
+        #gKern.compute_at(locMax, xo)
+        gKern.compute_root()

@@ -63,7 +63,7 @@ def main():
         print outputNP[outputNP < 0]
         imageIO.imwriteGrey(outputNP, "gaussian_blur.png")
 
-    if True: 
+    if False: 
         print 'Running harris corner detector'
         readstart = time.time()
         
@@ -77,6 +77,15 @@ def main():
         outputNP, myFunc=a11.harris(im, scheduleIndex)
         print ' Dimensionality of Halide Func:', myFunc.dimensions()
         imageIO.imwrite(outputNP, filen+'-harris.png')
+        
+    if True:
+        print "Running harris autotune"
+        im=numpy.load('Input/hk.npy')
+        best_sched, best_params, best_time = a11.autotuneHarris(im)
+        print "Best Schedule: ", best_sched
+        print "Best Time: ", best_time
+        print "Best Parameters: ", best_params
+        
  
 #the usual Python module business
 if __name__ == '__main__':

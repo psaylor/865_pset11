@@ -282,7 +282,7 @@ def harris(im, scheduleIndex):
     Note that the local maximum criterion is simplified compared to our original Harris
     You might want to reuse or copy-paste some of the code you wrote above        
     Return a pair (outputNP, myFunc) where outputNP is a numpy array and myFunc is a Halide Func'''
-    (locMax, threshold, M, trace, det, ixiy, blurIxIyX, iy2, blurIy2X, ix2, blurIx2X, temp_ixiy, temp_iy2, temp_ix2, gx, gy, blurX, finalBlur, gKern, clamped_lumi) = harris_algorithm(im)
+    (locMax, threshold, M, trace, det, ixiy, blurIxIyX, iy2, blurIy2X, ix2, blurIx2X, temp_ixiy, temp_iy2, temp_ix2, gx, gy, blurX, finalBlur, gKern, clamped_lumi, lumi, input) = harris_algorithm(im)
 
     if (scheduleIndex == 0):
         print "Compute_root scheduling..."
@@ -302,7 +302,7 @@ def harris(im, scheduleIndex):
     else:
         print "Fast Scheduling..."
         # use a smart schedule that makes use of parallelism and  has decent locality (tiles are often a good option)
-        x, y, xo, yo, xi, yi = Var('x'), Vary('y', Var('xo'), Var('yo'), Var('xi'), Var('yi')
+        x, y, xo, yo, xi, yi = Var('x'), Var('y'), Var('xo'), Var('yo'), Var('xi'), Var('yi')
 
         finalBlur.compute_root() \
             .tile(x, y, xo, yo, xi, yi, 128, 64) \
@@ -350,23 +350,6 @@ def harris(im, scheduleIndex):
     return (outputNP, locMax)
 
 
-def gauss(r, sigma):
-  # formula: e^(-r**2 / 2*sigma**2)
-  num = -1.0 * math.pow(r, 2)
-  den = 2.0 * math.pow(sigma, 2)
-  g = math.exp(num/den)
-  return g
-
-def horiGaussKernel(sigma, truncate=3):
-  '''Return an one d kernel'''
-  max_r = int(sigma * truncate)
-  kernel = [gauss(r, sigma) for r in range(-max_r, max_r+1)]
-  kernel = np.array(kernel, dtype=np.float64)
-  kernel.shape = (1, kernel.shape)
-  kernel = normalizeKernel(kernel)
-  return kernel
-
-
 def harris_algorithm(im):
     ''' Return a pair (outputNP, myFunc) '''
     input = Image(Float(32), im)
@@ -387,40 +370,40 @@ def harris_algorithm(im):
     threshold = Func('threshold')
     locMax = Func('localMaximum')
 
-    print "compute luminance and blur"
+    # print "compute luminance and blur"
     lumi[x,y] = input[x,y,0]*0.3 + input[x,y,1]*0.6 + input[x,y,2]*0.1
     clamped_lumi[x, y] = lumi[clamp(x, 0, input.width()-1), clamp(y, 0, input.height()-1)]
     blurX, finalBlur, gKern = GaussianSingleChannelWithKernel(clamped_lumi, sigmaG)
 
-    print "compute gradient"
+    # print "compute gradient"
     (gx, gy) = sobel_x_y(finalBlur)
 
-    print 'form tensor'
+    # print 'form tensor'
     temp_ix2[x,y] = gx[x,y]**2
     temp_iy2[x,y] = gy[x,y]**2
     temp_ixiy[x,y] = gx[x,y] * gy[x,y]
 
-    print 'blur tensor'
+    # print 'blur tensor'
     (blurIx2X, ix2, throw) = GaussianSingleChannelWithKernel(temp_ix2, sigmaG*factor, gKern)
     (blurIy2X, iy2, throw) = GaussianSingleChannelWithKernel(temp_iy2, sigmaG*factor, gKern)
     (blurIxIyX, ixiy, throw) = GaussianSingleChannelWithKernel(temp_ixiy, sigmaG*factor, gKern)
 
-    print 'determinant of tensor'
+    # print 'determinant of tensor'
     det[x,y] = (ix2[x,y]*iy2[x,y]) - ixiy[x,y]**2
     # trace of tensor
     trace[x,y] = ix2[x,y] + iy2[x,y]
 
-    print 'Harris response'
+    # print 'Harris response'
     M[x,y] = det[x,y] - k*trace[x,y]**2
 
-    print 'threshold'
+    # print 'threshold'
     threshold[x,y] = select(M[x,y] > thr, 1.0, 0.0)
 
-    print 'local maximum'
+    # print 'local maximum'
     localMaxCondition = (M[x,y]>M[x,y+1]) & (M[x,y]>M[x+1,y+1]) & (M[x,y]>M[x,y-1]) & (M[x,y]>M[x-1,y-1])
     locMax[x,y] = select(localMaxCondition , threshold[x,y], 0.0)
 
-    return (locMax, threshold, M, trace, det, ixiy, blurIxIyX, iy2, blurIy2X, ix2, blurIx2X, temp_ixiy, temp_iy2, temp_ix2, gx, gy, blurX, finalBlur, gKern, clamped_lumi)
+    return (locMax, threshold, M, trace, det, ixiy, blurIxIyX, iy2, blurIy2X, ix2, blurIx2X, temp_ixiy, temp_iy2, temp_ix2, gx, gy, blurX, finalBlur, gKern, clamped_lumi, lumi, input)
 
 def autotuneHarris(im):
     height, width = im.shape[0:2]
@@ -433,9 +416,11 @@ def autotuneHarris(im):
     for y_tile_size in tile_dims:
         for x_tile_size in tile_dims:
             # Get the Algorithm
-            (locMax, threshold, M, trace, det, ixiy, blurIxIyX, iy2, blurIy2X, ix2, blurIx2X, temp_ixiy, temp_iy2, temp_ix2, gx, gy, blurX, finalBlur, gKern, clamped_lumi) = harris_algorithm(im)
+            print "Tuning Schedule 1 | y_tile_size=",y_tile_size, ", x_tile_size=", x_tile_size
+            (locMax, threshold, M, trace, det, ixiy, blurIxIyX, iy2, blurIy2X, ix2, blurIx2X, temp_ixiy, temp_iy2, temp_ix2, gx, gy, blurX, finalBlur, gKern, clamped_lumi, lumi, input) = harris_algorithm(im)
             
-            # Set the schedule    
+            # Set the schedule
+            x, y, xo, yo, xi, yi = Var('x'), Var('y'), Var('xo'), Var('yo'), Var('xi'), Var('yi')   
             locMax.tile(x,y,xo,yo,xi,yi, y_tile_size, x_tile_size)
             locMax.parallel(yo)
             clamped_lumi.compute_at(locMax, yo)
@@ -453,12 +438,51 @@ def autotuneHarris(im):
             M.compute_at(locMax, xo)
             
             # Time it
-            runTime = runAndMeasure(locMax, width, height)
+            runTime = runAndMeasure(locMax, input.width(), input.height())
             
             # Check if best
-            if runTime < best_time:
+            if runTime < best_time or (best_time == -1):
                 best_time = runTime
                 best_schedule = 1
+                best_params = { "y_tile_size": y_tile_size, "x_tile_size": x_tile_size }
+    
+    # Schedule 2: Compute Blurs at root in tiles
+    for y_tile_size in tile_dims:
+        for x_tile_size in tile_dims:
+            print "Tuning Schedule 1 | y_tile_size=",y_tile_size, ", x_tile_size=", x_tile_size
+            (locMax, threshold, M, trace, det, ixiy, blurIxIyX, iy2, blurIy2X, ix2, blurIx2X, temp_ixiy, temp_iy2, temp_ix2, gx, gy, blurX, finalBlur, gKern, clamped_lumi, lumi, input) = harris_algorithm(im)
+            
+            clamped_lumi.compute_root()
+            gKern.compute_root()
+            finalBlur.compute_root() \
+                .tile(x, y, xo, yo, xi, yi, 128, 64) \
+                .parallel(yo)
+            ix2.compute_root() \
+                .tile(x, y, xo, yo, xi, yi, 128, 64) \
+                .parallel(yo)
+            iy2.compute_root() \
+                .tile(x, y, xo, yo, xi, yi, 128, 64) \
+                .parallel(yo)
+            ixiy.compute_root() \
+                .tile(x, y, xo, yo, xi, yi, 128, 64) \
+                .parallel(yo)
+
+            blurIx2X.compute_at(ix2, xo)
+            blurIy2X.compute_at(iy2, xo)
+            blurIxIyX.compute_at(ixiy, xo)
+            blurX.compute_at(finalBlur, xo)
+        
+            temp_ix2.compute_at(ix2, xo)
+            temp_iy2.compute_at(iy2, xo)
+            temp_ixiy.compute_at(ixiy, xo)
+
+            locMax.tile(x,y,xo,yo,xi,yi,128,64)
+            locMax.parallel(yo)
+            M.compute_at(locMax, xo)
+        
+            
+                   
+    return best_schedule, best_params, best_time
             
 def runAndMeasure(myFunc, w, h):
     myFunc.compile_jit()    
