@@ -23,7 +23,12 @@ Q7: How long did it take for the 2 schedules for the smooth gradient?
 {A7: The default schedule took 0.0340030193329 seconds, and the final schedule took 0.0636739730835 seconds. Instead of a speedup, I observed a slow-down of about 2x.}
 
 Q8: Speed in ms per megapixel for the 4 schedules (1 per line)
-{A8: your answer}
+{A8: 
+Schedule 1: 0.238843870163
+Schedule 2: 0.141817712784
+Schedule 3: 0.177475786209
+Schedule 4: 0.104720830917
+}
 
 Q9: What machine did you use (CPU type, speed, number of cores, memory)
 {A9: your answer}

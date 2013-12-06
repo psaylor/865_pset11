@@ -38,6 +38,7 @@ def main():
     if True: 
         L=a11.pythonCodeForBoxSchedule7(smallLumi)
         print L
+
     if False: 
         outputNP, myFunc=a11.localMax(lumi)
         print ' Dimensionality of Halide Func:', myFunc.dimensions()

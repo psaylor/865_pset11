@@ -56,17 +56,15 @@ def harris(im, sigmaG=1, factor=4, k = 0.15, thr=0.0, debug=False):
 
 
 def main():
+    im=np.load('Input/hk.npy')
+    t=time.time()
+    out=harris(im)
+    dt=time.time()-t
 
-    im=numpy.load('Input/hk.npy')
+    print 'took ', dt, 'seconds'
 
-	t=time.time()
-	out=harris(im)
-	dt=time.time()-t
-
-	print 'took ', dt, 'seconds'
-
-	norm=np.max(out)
-	imageIO.imwrite(out/norm)
+    norm=np.max(out)
+    imageIO.imwrite(out/norm)
 
 
 
