@@ -407,7 +407,7 @@ def harris_algorithm(im):
 
 def autotuneHarris(im):
     height, width = im.shape[0:2]
-    tile_dims = [128, 256]
+    tile_dims = [64, 128, 256, 512]
     best_time = -1
     best_schedule = -1
     best_params = dict()
@@ -416,7 +416,6 @@ def autotuneHarris(im):
     for y_tile_size in tile_dims:
         for x_tile_size in tile_dims:
             # Get the Algorithm
-            continue
             print "\nTuning Schedule 1 | y_tile_size=",y_tile_size, ", x_tile_size=", x_tile_size
             (locMax, threshold, M, trace, det, ixiy, blurIxIyX, iy2, blurIy2X, ix2, blurIx2X, temp_ixiy, temp_iy2, temp_ix2, gx, gy, blurX, finalBlur, gKern, clamped_lumi, lumi, input) = harris_algorithm(im)
             
@@ -449,8 +448,9 @@ def autotuneHarris(im):
     
     # Schedule 2: Compute Blurs at root in tiles
     dim_range = xrange(len(tile_dims))
-    print "Schedule 2 has ", dim_range**4, " configurations."
+    print "Schedule 2 has ", len(dim_range)**4, " configurations."
     for yt in dim_range:
+        continue
         for xt in dim_range:
             for ytb in dim_range:
                 for xtb in dim_range:
@@ -505,10 +505,11 @@ def autotuneHarris(im):
         
     # Schedule 3: Compute Blurs at xo in locMax tiles
     dim_range = xrange(len(tile_dims))
-    print "Schedule 3 has less than ", dim_range**4, " configurations."
+    print "Schedule 3 has less than ", len(dim_range)**4, " configurations."
     for yt in dim_range:
+        continue
         for xt in dim_range:
-            for ytb in xrange(yt)+1:
+            for ytb in xrange(yt+1):
                 for xtb in xrange(xt+1):
                     y_tile_size = tile_dims[yt]
                     x_tile_size = tile_dims[xt]

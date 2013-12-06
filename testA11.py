@@ -81,6 +81,7 @@ def main():
     if True:
         print "Running harris autotune"
         im=numpy.load('Input/hk.npy')
+        #im=imageIO.imread('hk-small.png')
         best_sched, best_params, best_time = a11.autotuneHarris(im)
         print "Best Schedule: ", best_sched
         print "Best Time: ", best_time
