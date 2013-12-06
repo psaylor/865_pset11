@@ -346,6 +346,7 @@ def harris(im, scheduleIndex):
         temp_iy2.compute_root()
         temp_ixiy.compute_root()
         M.compute_root()
+        gKern.compute_root()
 
     else:
         print "Fast Scheduling..."
@@ -388,7 +389,7 @@ def harris(im, scheduleIndex):
         blurIx2X.compute_at(locMax, xo)
         blurIy2X.compute_at(locMax, xo)
         blurIxIyX.compute_at(locMax, xo)
-
+        gKern.compute_at(locMax, xo)
         
 
     
