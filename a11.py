@@ -416,7 +416,7 @@ def autotuneHarris(im):
     for y_tile_size in tile_dims:
         for x_tile_size in tile_dims:
             # Get the Algorithm
-            print "Tuning Schedule 1 | y_tile_size=",y_tile_size, ", x_tile_size=", x_tile_size
+            print "\nTuning Schedule 1 | y_tile_size=",y_tile_size, ", x_tile_size=", x_tile_size
             (locMax, threshold, M, trace, det, ixiy, blurIxIyX, iy2, blurIy2X, ix2, blurIx2X, temp_ixiy, temp_iy2, temp_ix2, gx, gy, blurX, finalBlur, gKern, clamped_lumi, lumi, input) = harris_algorithm(im)
             
             # Set the schedule
@@ -447,38 +447,55 @@ def autotuneHarris(im):
                 best_params = { "y_tile_size": y_tile_size, "x_tile_size": x_tile_size }
     
     # Schedule 2: Compute Blurs at root in tiles
-    for y_tile_size in tile_dims:
-        for x_tile_size in tile_dims:
-            print "Tuning Schedule 1 | y_tile_size=",y_tile_size, ", x_tile_size=", x_tile_size
-            (locMax, threshold, M, trace, det, ixiy, blurIxIyX, iy2, blurIy2X, ix2, blurIx2X, temp_ixiy, temp_iy2, temp_ix2, gx, gy, blurX, finalBlur, gKern, clamped_lumi, lumi, input) = harris_algorithm(im)
-            
-            clamped_lumi.compute_root()
-            gKern.compute_root()
-            finalBlur.compute_root() \
-                .tile(x, y, xo, yo, xi, yi, 128, 64) \
-                .parallel(yo)
-            ix2.compute_root() \
-                .tile(x, y, xo, yo, xi, yi, 128, 64) \
-                .parallel(yo)
-            iy2.compute_root() \
-                .tile(x, y, xo, yo, xi, yi, 128, 64) \
-                .parallel(yo)
-            ixiy.compute_root() \
-                .tile(x, y, xo, yo, xi, yi, 128, 64) \
-                .parallel(yo)
+    dim_range = xrange(len(tile_dims))
+    for yt in dim_range:
+        for xt in dim_range:
+            for ytb in xrange(yt+1):
+                for xtb in xrange(xt+1):
+                    y_tile_size = tile_dims[yt]
+                    x_tile_size = tile_dims[xt]
+                    y_blur_tile_size = tile_dims[ytb]
+                    x_blur_tile_size = tile_dims[xtb]
+                    print "\nTuning Schedule 2 | y_tile_size=",y_tile_size, ", x_tile_size=", x_tile_size, ", y_blur_tile_size=", y_blur_tile_size, ", x_blur_tile_size=", x_blur_tile_size
+                    (locMax, threshold, M, trace, det, ixiy, blurIxIyX, iy2, blurIy2X, ix2, blurIx2X, temp_ixiy, temp_iy2, temp_ix2, gx, gy, blurX, finalBlur, gKern, clamped_lumi, lumi, input) = harris_algorithm(im)
+                    
+                    clamped_lumi.compute_root()
+                    gKern.compute_root()
+                    finalBlur.compute_root() \
+                        .tile(x, y, xo, yo, xi, yi, y_blur_tile_size, x_blur_tile_size) \
+                        .parallel(yo)
+                    ix2.compute_root() \
+                        .tile(x, y, xo, yo, xi, yi, y_blur_tile_size, x_blur_tile_size) \
+                        .parallel(yo)
+                    iy2.compute_root() \
+                        .tile(x, y, xo, yo, xi, yi, y_blur_tile_size, x_blur_tile_size) \
+                        .parallel(yo)
+                    ixiy.compute_root() \
+                        .tile(x, y, xo, yo, xi, yi, y_blur_tile_size, x_blur_tile_size) \
+                        .parallel(yo)
 
-            blurIx2X.compute_at(ix2, xo)
-            blurIy2X.compute_at(iy2, xo)
-            blurIxIyX.compute_at(ixiy, xo)
-            blurX.compute_at(finalBlur, xo)
-        
-            temp_ix2.compute_at(ix2, xo)
-            temp_iy2.compute_at(iy2, xo)
-            temp_ixiy.compute_at(ixiy, xo)
+                    blurIx2X.compute_at(ix2, xo)
+                    blurIy2X.compute_at(iy2, xo)
+                    blurIxIyX.compute_at(ixiy, xo)
+                    blurX.compute_at(finalBlur, xo)
+                
+                    temp_ix2.compute_at(ix2, xo)
+                    temp_iy2.compute_at(iy2, xo)
+                    temp_ixiy.compute_at(ixiy, xo)
 
-            locMax.tile(x,y,xo,yo,xi,yi,128,64)
-            locMax.parallel(yo)
-            M.compute_at(locMax, xo)
+                    locMax.tile(x,y,xo,yo,xi,yi, y_tile_size, x_tile_size)
+                    locMax.parallel(yo)
+                    M.compute_at(locMax, xo)
+
+                    # Time it
+                    runTime = runAndMeasure(locMax, input.width(), input.height())
+                    
+                    # Check if best
+                    if runTime < best_time or (best_time == -1):
+                        print "NEW BEST!"
+                        best_time = runTime
+                        best_schedule = 2
+                        best_params = { "y_tile_size": y_tile_size, "x_tile_size": x_tile_size, "y_blur_tile_size": y_blur_tile_size, "x_blur_tile_size": x_blur_tile_size }
         
             
                    
@@ -493,7 +510,7 @@ def runAndMeasure(myFunc, w, h):
     
     hIm=Image(output)
     mpix=hIm.width()*hIm.height()/1e6
-    print 'best: ', dt
+    print '    time: ', dt
     print  '%.5f ms per megapixel (%.7f ms for %d megapixels)' % (dt/mpix*1e3, dt*1e3, mpix)
     return dt            
     
