@@ -243,6 +243,33 @@ def GaussianSingleChannel(input, sigma, trunc=3):
     blurY[x,y] = sum(blurX[x, y+red.x] * gaussKernel[red.x])
     return (blurX, blurY)
 
+def GaussianSingleChannelWithKernel(input, sigma, gaussKernel=0, trunc=3):
+    '''takes a single-channel image or Func IN HALIDE FORMAT as input 
+        and returns a Gaussian blurred Func with standard 
+        deviation sigma, truncated at trunc*sigma on both sides
+        return two Funcs corresponding to the two stages blurX, blurY. This will be
+        useful later for scheduling. 
+        We advise you use the sum() sugar
+        We also advise that you first generate the kernel as a Halide Func
+        You can assume that input is a clamped image and you don't need to worry about
+        boundary conditions here. See calling example in test file. '''
+
+    blurX = Func('blurX')
+    blurY = Func('blurY')
+    x = Var('x')
+    y = Var('y')
+    r = Var('r')
+
+    if gaussKernel==0:
+        gaussKernel = Func('gaussianKernel')
+        gaussKernel[r] = exp((-1.0 * (r**2) )/ (2.0 * sigma**2))/ ( sigma * sqrt(2* math.pi) )
+
+    half_kernel_width = int( sigma*trunc )
+
+    red = RDom(-half_kernel_width, 2*half_kernel_width +1, 'red_x')
+    blurX[x,y] = sum(input[x+red.x, y] * gaussKernel[red.x])
+    blurY[x,y] = sum(blurX[x, y+red.x] * gaussKernel[red.x])
+    return (blurX, blurY, gaussKernel)
 
 def harris(im, scheduleIndex):
     ''' im is a numpy RGB array. 
@@ -276,7 +303,7 @@ def harris(im, scheduleIndex):
     print "compute luminance and blur"
     lumi[x,y] = input[x,y,0]*0.3 + input[x,y,1]*0.6 + input[x,y,2]*0.1
     clamped_lumi[x, y] = lumi[clamp(x, 0, input.width()-1), clamp(y, 0, input.height()-1)]
-    blurX, finalBlur = GaussianSingleChannel(clamped_lumi, sigmaG)
+    blurX, finalBlur, gKern = GaussianSingleChannelWithKernel(clamped_lumi, sigmaG)
 
     print "compute gradient"
     (gx, gy) = sobel_x_y(finalBlur)
@@ -287,9 +314,9 @@ def harris(im, scheduleIndex):
     temp_ixiy[x,y] = gx[x,y] * gy[x,y]
 
     print 'blur tensor'
-    (blurIx2X, ix2) = GaussianSingleChannel(temp_ix2, sigmaG*factor)
-    (blurIy2X, iy2) = GaussianSingleChannel(temp_iy2, sigmaG*factor)
-    (blurIxIyX, ixiy) = GaussianSingleChannel(temp_ixiy, sigmaG*factor)
+    (blurIx2X, ix2, throw) = GaussianSingleChannelWithKernel(temp_ix2, sigmaG*factor, gKern)
+    (blurIy2X, iy2, throw) = GaussianSingleChannelWithKernel(temp_iy2, sigmaG*factor, gKern)
+    (blurIxIyX, ixiy, throw) = GaussianSingleChannelWithKernel(temp_ixiy, sigmaG*factor, gKern)
 
     print 'determinant of tensor'
     det[x,y] = (ix2[x,y]*iy2[x,y]) - ixiy[x,y]**2
